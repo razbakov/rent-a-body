@@ -10,8 +10,8 @@
         <TButton v-if="!uid" to="/signup">
           Join Now
         </TButton>
-        <TButton v-else to="/account">
-          Go to my Account
+        <TButton v-else to="/app">
+          Open App
         </TButton>
       </div>
     </div>

@@ -1,6 +1,6 @@
 <template>
   <div class="flex justify-center items-center h-screen w-full">
-    <main class="card shadow rounded p-4 pt-0">
+    <main class="shadow rounded p-4 pt-0">
       <div v-if="error">
         <div class="typo">
           <h2>Oops</h2>

@@ -11,7 +11,7 @@
         >
           <template v-slot="{ item }">
             <div class="p-4 card-item">
-              <div class="font-bold text-xl mb-2">{{ item.title }}</div>
+              <div class="font-bold text-xl">{{ item.title }}</div>
               <div class="text-xs mb-4">
                 Created on {{ getDateTime(item.createdAt) }}
               </div>
