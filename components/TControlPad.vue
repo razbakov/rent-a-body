@@ -51,6 +51,31 @@ export default {
       type: String,
       default: 'stop'
     }
+  },
+  mounted() {
+    document.addEventListener('keydown', this.onKeyDown)
+    document.addEventListener('keyup', this.onKeyUp)
+  },
+  methods: {
+    onKeyUp(e) {
+      this.$emit('input', 'stop')
+    },
+    onKeyDown(e) {
+      switch (e.key) {
+        case 'ArrowDown':
+          this.$emit('input', 'down')
+          break
+        case 'ArrowUp':
+          this.$emit('input', 'up')
+          break
+        case 'ArrowLeft':
+          this.$emit('input', 'left')
+          break
+        case 'ArrowRight':
+          this.$emit('input', 'right')
+          break
+      }
+    }
   }
 }
 </script>

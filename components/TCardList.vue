@@ -36,7 +36,7 @@
 
     <div class="mt-4" />
 
-    <div v-for="(item, itemId) in items" :key="item.id" :item="item">
+    <div v-for="(item, itemId) in items" :key="item.id">
       <TForm
         v-if="currentId === itemId"
         v-model="items[itemId]"
