@@ -1,7 +1,7 @@
 <template>
   <TLoader v-if="!stream" />
   <div v-else class="bg-black text-white w-full h-screen">
-    <div v-if="isCreator" class="absolute top-0 left-0 m-4">
+    <div v-if="isCreator" class="absolute top-0 left-0 m-4 z-50">
       <button
         v-for="camera in cameras"
         :key="camera.deviceId"
@@ -104,6 +104,8 @@ export default {
       this.cameraId = deviceId
     },
     async initSpeaker() {
+      console.log('initSpeaker')
+
       const devices = await navigator.mediaDevices.enumerateDevices()
       this.cameras = devices.filter((device) => device.kind === 'videoinput')
 
@@ -150,7 +152,7 @@ export default {
       })
     },
     attachTrack(track) {
-      document.getElementById('video').appendChild(track.attach())
+      document.getElementById('video').se(track.attach())
     }
   }
 }
