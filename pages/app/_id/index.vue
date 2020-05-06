@@ -1,8 +1,15 @@
 <template>
   <TLoader v-if="!stream" />
-  <div v-else class="bg-black text-white w-full h-screen p-4">
-    <div id="remote"></div>
+  <div v-else class="bg-black text-white w-full h-screen">
+    <div id="video" class="w-full h-screen"></div>
+    <button
+      @click="disconnect()"
+      class="absolute top-0 right-0 m-4 bordered border-white p-4"
+    >
+      Stop
+    </button>
     <TControlPad
+      class="absolute bottom-0 right-0 m-4"
       :value.sync="stream.direction"
       @input="(direction) => update({ direction })"
     />
@@ -10,7 +17,7 @@
 </template>
 
 <script>
-import { createLocalTracks, connect } from 'twilio-video'
+import { createLocalVideoTrack, connect } from 'twilio-video'
 import TControlPad from '~/components/TControlPad'
 import TLoader from '~/components/TLoader'
 import useAuth from '~/use/auth'
@@ -22,6 +29,9 @@ export default {
     TControlPad,
     TLoader
   },
+  data: () => ({
+    room: null
+  }),
   setup() {
     const { params } = useRouter()
     const id = params.id
@@ -45,8 +55,8 @@ export default {
   },
 
   watch: {
-    uid(uid) {
-      if (!uid) {
+    loading(loading) {
+      if (loading) {
         return
       }
 
@@ -74,47 +84,46 @@ export default {
         ).json()
       ).token
 
-      this.initTwilio(token)
+      if (this.isCreator) {
+        this.initSpeaker(token)
+      } else {
+        this.initViewer(token)
+      }
     },
-    async initTwilio(token) {
-      const tracks = await createLocalTracks()
+    disconnect() {
+      if (this.room) {
+        this.room.disconnect()
+      }
+    },
+    async initSpeaker(token) {
+      const track = await createLocalVideoTrack()
+      this.attachTrack(track)
 
-      const room = await connect(token, {
-        tracks
+      this.room = await connect(token, {
+        tracks: [track],
+        video: {
+          facingMode: 'environment'
+        }
+      })
+    },
+    async initViewer(token) {
+      this.room = await connect(token, {
+        audio: false,
+        video: false
       })
 
-      const localParticipant = room.localParticipant
-      console.log(
-        `Connected to the Room as LocalParticipant "${localParticipant.identity}"`
-      )
-
-      // Log any Participants already connected to the Room
-      room.participants.forEach((participant) => {
-        console.log(
-          `Participant "${participant.identity}" is connected to the Room`
-        )
-      })
-      // Log Participants as they disconnect from the Room
-      room.once('participantDisconnected', (participant) => {
-        console.log(
-          `Participant "${participant.identity}" has disconnected from the Room`
-        )
-      })
-
-      room.on('participantConnected', (participant) => {
-        console.log(`Participant "${participant.identity}" connected`)
-
+      this.room.on('participantConnected', (participant) => {
         participant.tracks.forEach((publication) => {
           if (publication.isSubscribed) {
-            const track = publication.track
-            document.getElementById('remote').appendChild(track.attach())
+            this.attachTrack(publication.track)
           }
         })
 
-        participant.on('trackSubscribed', (track) => {
-          document.getElementById('remote').appendChild(track.attach())
-        })
+        participant.on('trackSubscribed', this.attachTrack)
       })
+    },
+    attachTrack(track) {
+      document.getElementById('video').appendChild(track.attach())
     }
   }
 }
