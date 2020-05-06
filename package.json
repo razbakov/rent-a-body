@@ -47,6 +47,7 @@
     "platform-detect": "^3.0.0",
     "portal-vue": "^2.1.7",
     "slugify": "^1.4.0",
+    "twilio-video": "^2.4.0",
     "url-utm-params": "^0.1.0",
     "v-calendar": "^1.0.5",
     "v-runtime-template": "^1.10.0",
