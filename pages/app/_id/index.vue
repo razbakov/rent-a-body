@@ -1,13 +1,17 @@
 <template>
   <TLoader v-if="!stream" />
   <div v-else class="bg-black text-white w-full h-screen">
+    <div v-if="isCreator" class="absolute top-0 left-0 m-4">
+      <button
+        v-for="camera in cameras"
+        :key="camera.deviceId"
+        class="border border-white p-2 m-1"
+        @click="setCamera(camera.deviceId)"
+      >
+        {{ camera.label }}
+      </button>
+    </div>
     <div id="video" class="w-full h-screen"></div>
-    <button
-      @click="disconnect()"
-      class="absolute top-0 right-0 m-4 bordered border-white p-4"
-    >
-      Stop
-    </button>
     <TControlPad
       class="absolute bottom-0 right-0 m-4"
       :value.sync="stream.direction"
@@ -30,7 +34,10 @@ export default {
     TLoader
   },
   data: () => ({
-    room: null
+    room: null,
+    cameras: [],
+    cameraId: '',
+    token: ''
   }),
   setup() {
     const { params } = useRouter()
@@ -55,6 +62,9 @@ export default {
   },
 
   watch: {
+    cameraId() {
+      this.initSpeaker()
+    },
     loading(loading) {
       if (loading) {
         return
@@ -71,7 +81,7 @@ export default {
         room: this.id
       }
 
-      const token = (
+      this.token = (
         await (
           await fetch(
             'https://us-central1-rent-a-body.cloudfunctions.net/twilio',
@@ -85,29 +95,46 @@ export default {
       ).token
 
       if (this.isCreator) {
-        this.initSpeaker(token)
+        this.initSpeaker()
       } else {
-        this.initViewer(token)
+        this.initViewer()
       }
     },
-    disconnect() {
-      if (this.room) {
-        this.room.disconnect()
-      }
+    setCamera(deviceId) {
+      this.cameraId = deviceId
     },
-    async initSpeaker(token) {
-      const track = await createLocalVideoTrack()
+    async initSpeaker() {
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      this.cameras = devices.filter((device) => device.kind === 'videoinput')
+
+      let options = {}
+
+      if (this.cameraId) {
+        options = {
+          deviceId: { exact: this.cameraId }
+        }
+      }
+
+      const track = await createLocalVideoTrack(options)
+
       this.attachTrack(track)
 
-      this.room = await connect(token, {
-        tracks: [track],
-        video: {
-          facingMode: 'environment'
-        }
-      })
+      if (!this.room) {
+        this.room = await connect(this.token, {
+          tracks: [track],
+          video: {
+            facingMode: 'environment'
+          }
+        })
+      } else {
+        const localParticipant = this.room.localParticipant
+        const tracks = Array.from(localParticipant.videoTracks.values())
+        localParticipant.unpublishTracks(tracks)
+        localParticipant.publishTrack(track)
+      }
     },
     async initViewer(token) {
-      this.room = await connect(token, {
+      this.room = await connect(this.token, {
         audio: false,
         video: false
       })
