@@ -11,7 +11,10 @@
         {{ camera.label }}
       </button>
     </div>
-    <div id="video" class="w-full h-screen"></div>
+    <div
+      ref="video"
+      class="w-full h-screen flex items-center justify-center"
+    ></div>
     <TControlPad
       class="absolute bottom-0 right-0 m-4"
       :value.sync="stream.direction"
@@ -125,13 +128,18 @@ export default {
         this.room = await connect(this.token, {
           tracks: [track],
           video: {
-            facingMode: 'environment'
+            facingMode: 'environment',
+            height: 720,
+            frameRate: 24,
+            width: 1280
           }
         })
       } else {
         const localParticipant = this.room.localParticipant
-        const tracks = Array.from(localParticipant.videoTracks.values())
-        localParticipant.unpublishTracks(tracks)
+        const tracks = Array.from(localParticipant.getVideoTracks().values())
+        if (tracks.length) {
+          localParticipant.unpublishTracks(tracks)
+        }
         localParticipant.publishTrack(track)
       }
     },
@@ -152,7 +160,8 @@ export default {
       })
     },
     attachTrack(track) {
-      document.getElementById('video').se(track.attach())
+      this.$refs.video.innerHTML = ''
+      this.$refs.video.append(track.attach())
     }
   }
 }
