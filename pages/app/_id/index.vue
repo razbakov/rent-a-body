@@ -15,8 +15,8 @@
       </button>
     </div>
     <div
-      ref="video"
       id="video"
+      ref="video"
       class="w-full h-screen overflow-hidden flex items-center justify-center"
     ></div>
     <TControlPad
