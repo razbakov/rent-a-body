@@ -129,9 +129,8 @@ export default {
           tracks: [track],
           video: {
             facingMode: 'environment',
-            height: 720,
-            frameRate: 24,
-            width: 1280
+            height: 1280,
+            width: 720
           }
         })
       } else {
@@ -147,6 +146,14 @@ export default {
       this.room = await connect(this.token, {
         audio: false,
         video: false
+      })
+
+      this.room.participants.forEach((participant) => {
+        participant.tracks.forEach((publication) => {
+          if (publication.isSubscribed) {
+            this.attachTrack(publication.track)
+          }
+        })
       })
 
       this.room.on('participantConnected', (participant) => {
