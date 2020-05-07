@@ -1,7 +1,10 @@
 <template>
   <TLoader v-if="!stream" />
   <div v-else class="bg-black text-white w-full h-screen">
-    <div v-if="isCreator" class="absolute top-0 left-0 m-4 z-50">
+    <div class="absolute top-0 left-0 w-full m-4 z-50 text-center text-sm">
+      {{ message }}
+    </div>
+    <div v-if="isCreator" class="absolute top-0 left-0 m-4 mt-32 z-50">
       <button
         v-for="camera in cameras"
         :key="camera.deviceId"
@@ -39,8 +42,10 @@ export default {
   data: () => ({
     room: null,
     cameras: [],
-    cameraId: '',
-    token: ''
+    cameraId: null,
+    token: '',
+    track: null,
+    message: ''
   }),
   setup() {
     const { params } = useRouter()
@@ -107,7 +112,7 @@ export default {
       this.cameraId = deviceId
     },
     async initSpeaker() {
-      console.log('initSpeaker')
+      this.log('Joining as Speaker')
 
       const devices = await navigator.mediaDevices.enumerateDevices()
       this.cameras = devices.filter((device) => device.kind === 'videoinput')
@@ -120,55 +125,82 @@ export default {
         }
       }
 
-      const track = await createLocalVideoTrack(options)
+      if (this.track) {
+        this.log(`Stopping track ${this.track.name}`)
+        this.track.stop()
+        if (this.room?.localParticipant) {
+          this.log(`Unpublishing tracks`)
+          const tracks = Array.from(
+            this.room.localParticipant.videoTracks.values()
+          ).map((publication) => publication.track)
+          this.room.localParticipant.unpublishTracks(tracks)
+        }
+      }
 
-      this.attachTrack(track)
+      this.track = await createLocalVideoTrack(options)
 
       if (!this.room) {
         this.room = await connect(this.token, {
-          tracks: [track],
           video: {
             facingMode: 'environment',
             height: 1280,
             width: 720
           }
         })
-      } else {
-        const localParticipant = this.room.localParticipant
-        const tracks = Array.from(localParticipant.getVideoTracks().values())
-        if (tracks.length) {
-          localParticipant.unpublishTracks(tracks)
-        }
-        localParticipant.publishTrack(track)
       }
+
+      this.log(`Publishing track ${this.track.name}`)
+      this.room.localParticipant.publishTrack(this.track)
+      this.attachTrack(this.track, this.room.localParticipant)
     },
     async initViewer(token) {
+      this.log('Joining as Viewer')
       this.room = await connect(this.token, {
         audio: false,
         video: false
       })
 
+      const localParticipant = this.room.localParticipant
+
+      this.log(`Connected to the room as ${localParticipant.identity}`)
+
       this.room.participants.forEach((participant) => {
+        this.log(`Participant ${participant.identity} is connected`)
+
         participant.tracks.forEach((publication) => {
-          if (publication.isSubscribed) {
-            this.attachTrack(publication.track)
+          if (publication.track) {
+            this.attachTrack(publication.track, participant)
           }
         })
+
+        participant.on('trackSubscribed', (track) =>
+          this.attachTrack(track, participant)
+        )
       })
 
-      this.room.on('participantConnected', (participant) => {
+      this.room.once('participantConnected', (participant) => {
+        this.log(`Participant ${participant.identity} has joined`)
+
         participant.tracks.forEach((publication) => {
           if (publication.isSubscribed) {
-            this.attachTrack(publication.track)
+            this.attachTrack(publication.track, participant)
           }
         })
 
-        participant.on('trackSubscribed', this.attachTrack)
+        participant.on('trackSubscribed', (track) =>
+          this.attachTrack(track, participant)
+        )
       })
     },
-    attachTrack(track) {
+    attachTrack(track, participant) {
+      this.log(`Attaching track ${track.name} of ${participant?.identity}`)
+
       this.$refs.video.innerHTML = ''
       this.$refs.video.append(track.attach())
+    },
+    log(message) {
+      console.log(message)
+      this.message = message
     }
   }
 }
