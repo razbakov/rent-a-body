@@ -1,6 +1,6 @@
 <template>
   <TLoader v-if="!stream" />
-  <div v-else class="bg-black text-white w-full h-screen">
+  <div v-else class="bg-black text-white w-full h-screen overflow-hidden">
     <div class="absolute top-0 left-0 w-full m-4 z-50 text-center text-sm">
       {{ message }}
     </div>
@@ -16,7 +16,8 @@
     </div>
     <div
       ref="video"
-      class="w-full h-screen flex items-center justify-center"
+      id="video"
+      class="w-full h-screen overflow-hidden flex items-center justify-center"
     ></div>
     <TControlPad
       class="absolute bottom-0 right-0 m-4"
@@ -142,9 +143,7 @@ export default {
       if (!this.room) {
         this.room = await connect(this.token, {
           video: {
-            facingMode: 'environment',
-            height: 1280,
-            width: 720
+            facingMode: 'environment'
           }
         })
       }
@@ -205,3 +204,14 @@ export default {
   }
 }
 </script>
+
+<style>
+html,
+body {
+  overflow: hidden;
+}
+
+#video video {
+  max-height: 100vh;
+}
+</style>
