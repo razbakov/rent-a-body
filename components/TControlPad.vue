@@ -4,6 +4,8 @@
       <div
         class="m-1 rounded border border-white w-16 h-16 flex justify-center items-center"
         :class="{ 'bg-white text-black': value === 'up' }"
+        v-touch:start="startTouch('up')"
+        v-touch:end="endTouch()"
         @mousedown="$emit('input', 'up')"
         @mouseup="$emit('input', 'stop')"
       >
@@ -14,6 +16,8 @@
       <div
         class="m-1 rounded border border-white w-16 h-16 flex justify-center items-center"
         :class="{ 'bg-white text-black': value === 'left' }"
+        v-touch:start="startTouch('left')"
+        v-touch:end="endTouch()"
         @mousedown="$emit('input', 'left')"
         @mouseup="$emit('input', 'stop')"
       >
@@ -22,6 +26,8 @@
       <div
         class="m-1 rounded border border-white w-16 h-16 flex justify-center items-center"
         :class="{ 'bg-white text-black': value === 'down' }"
+        v-touch:start="startTouch('down')"
+        v-touch:end="endTouch()"
         @mousedown="$emit('input', 'down')"
         @mouseup="$emit('input', 'stop')"
       >
@@ -30,6 +36,8 @@
       <div
         class="m-1 rounded border border-white w-16 h-16 flex justify-center items-center"
         :class="{ 'bg-white text-black': value === 'right' }"
+        v-touch:start="startTouch('right')"
+        v-touch:end="endTouch()"
         @mousedown="$emit('input', 'right')"
         @mouseup="$emit('input', 'stop')"
       >
@@ -57,6 +65,16 @@ export default {
     document.addEventListener('keyup', this.onKeyUp)
   },
   methods: {
+    startTouch(direction) {
+      return () => {
+        this.$emit('input', direction)
+      }
+    },
+    endTouch() {
+      return () => {
+        this.$emit('input', 'stop')
+      }
+    },
     onKeyUp(e) {
       this.$emit('input', 'stop')
     },
